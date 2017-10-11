@@ -39,7 +39,7 @@ dorequest() {
 		local response_status=$(echo $http_body | ./jq '.status')
 		if [ $response_status -eq 1 ]; then
 			echo "Request Successfull: url $URLPREFIX/$suburl"
-			echo "$http_body" >> foglight-restfulapi-output.log
+			echo "REST API ($URLPREFIX/$suburl): $http_body" >> foglight-restfulapi-output.log
 		else
 			echo "Request Failed: make sure you pass the correct parameters. (response status 0)"
 			exit 1
@@ -79,19 +79,50 @@ login() {
 }
 
 ###### sample section ######
+## security login
 login $HOST $PORT $USERNAME $PASSWORD
+
 ## type
 dorequest $HOST $PORT type/Host $AUTHTOKEN GET
+
 ## current user
 dorequest $HOST $PORT user/current $AUTHTOKEN GET
+
 ## alarm
 dorequest $HOST $PORT alarm/current $AUTHTOKEN GET
 #dorequest $HOST $PORT alarm/ack/cb6286ab-4980-40ec-a54d-0f18d4039e70 $AUTHTOKEN POST
 dorequest $HOST $PORT alarm/current $AUTHTOKEN GET
 dorequest $HOST $PORT alarm/history $AUTHTOKEN GET
 #dorequest $HOST $PORT alarm/history/cb6286ab-4980-40ec-a54d-0f18d4039e70 $AUTHTOKEN GET
+
 ## topology
 #dorequest $HOST $PORT topology/cb6286ab-4980-40ec-a54d-0f18d4039e70/memory/utilization $AUTHTOKEN GET
 dorequest $HOST $PORT topology/query $AUTHTOKEN POST data-topology-query.json
 dorequest $HOST $PORT type/Host/instances $AUTHTOKEN GET
 
+## push alarm
+dorequest $HOST $PORT alarm/pushAlarm $AUTHTOKEN POST data-push-alarm.json
+
+## push data
+#<!DOCTYPE types SYSTEM "../dtd/topology-types.dtd">
+#<types>
+#    <type name='PushDataTest1' extends='TopologyObject'>
+#		<property name='name' type='String' is-identity='true'/>
+#		<property name='testMetric' type='Metric' is-containment='true' unit-name='count' />
+#		<property name='testObservations' type='TestObservation1' is-containment='true' unit-name='count' />
+#	</type>	
+#	<type name='TestObservation1' extends='ComplexObservation'>
+#		<property name='current' type='TestObservationValue1' is-many='false' is-containment='true' />
+#		<property name='latest' type='TestObservationValue1' is-many='false' is-containment='true' />
+#		<property name='history' type='TestObservationValue1' is-many='true' is-containment='true' />
+#	</type>	
+#	<type name='TestObservationValue1' extends='ObservedValue'>
+#		<property name='value' type='TestObject1' is-containment='true'/>
+#	</type>	
+#	<type name="TestObject1" extends="DataObject">
+#		<property name='testName' type='String' />
+#		<property name='createDate' type='Date' />
+#		<property name='createTime' type='Double' />
+#	</type>
+#</types>
+dorequest $HOST $PORT topology/pushData $AUTHTOKEN POST data-push-data.json
